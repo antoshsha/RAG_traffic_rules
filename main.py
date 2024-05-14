@@ -1,7 +1,7 @@
 import time
 from collections import Counter
 from dotenv import load_dotenv
-
+from llama_index.llms.openai import OpenAI
 from llama_index.core.evaluation import CorrectnessEvaluator
 from llama_index.core.evaluation import SemanticSimilarityEvaluator
 from docs_loader import *
@@ -19,6 +19,17 @@ random.seed(0)
 
 
 def show_prompt(prompt):
+    """
+    Display a prompt consisting of a question, options, and the correct answer.
+
+    Parameters:
+    - prompt (dict): A dictionary containing the components of the prompt.
+                     It should have the following keys:
+                     - 'question': (str) The question being asked.
+                     - 'options': (list) A list of strings representing the options for the question.
+                     - 'right_answer': (str) The correct answer to the question.
+    """
+
     prompt_template = Template("""
     Question:
     {{question}}
@@ -38,33 +49,47 @@ def show_prompt(prompt):
 
 
 def generate_prompts(json_file, number):
+    """
+    Generate prompts for a given number of questions from a JSON file containing traffic rules questions and options.
+
+    Parameters:
+    - json_file (str): The path to the JSON file containing the questions and options.
+    - number (int): The number of the document
+
+    Returns:
+    - prompts (list): A list of tuples, where each tuple contains the following elements:
+                      1. The generated prompt (str).
+                      2. The correct answer (str) for the prompt.
+                      3. The number of the document (int).
+                      4. The number of options for the question (int).
+    """
     with open(json_file, 'r', encoding='utf-8') as file:
         data = json.load(file)
 
     prompts = []
 
     prompt_template = Template("""
-    Ти студент, що складає екзамен з правил дорожнього руху.
-    Я поставлю тобі питання і запропоную варіанти відповіді і ти повинен обрати правильну відповідь.
-    Надішли лише текст правильного варіанту відповіді українською мовою.
+    You are an expert in Ukrainian traffic rules.
+    I will ask you a question and provide options from which you should choose the right one.
+    Send me only the text of the right option in Ukrainian.
     -----------
-    Приклад:
+    Example:
     Вкажіть метод визначення причини різкого збільшення зусилля на кермовому колесі.
-    Варіанти відповіді:
+    Options:
     1.Візуальний огляд елементів системи гідропідсилювача рульового керування.
     2.Вимірювання робочого тиску в системі гідропідсилювача рульового керування.
     3.Діагностика під час руху.
     4.Варіанти 1 і 2.
 
-    В цьому випадку твоя відповідь повинна бути: "Варіанти 1 і 2." тому що варіанти відповіді 1 і 2 обидва правильні.
+    In this case your output must be "Варіанти 1 і 2." because both options 1 and 2 are correct
     -----------
-    Моє питання: {{ question }}
-    Варіанти відповіді:
+    My question: {{ question }}
+    Options:
     {% for option in options %}
     {{ loop.index }}. {{ option }}
     {% endfor %}
     ---------
-    Надішли лише текст правильного варіанту відповіді українською мовою. Це дуже важливо для моєї карʼєри.
+    Send the answer as the text of the right option in Ukrainian. This is very important to my career.
     """)
 
     for prompt_id, prompt_data in data.items():
@@ -78,6 +103,19 @@ def generate_prompts(json_file, number):
 
 
 def generate_all_prompts(directory):
+    """
+    Generate prompts for all JSON files in a given directory.
+
+    Parameters:
+    - directory (str): The path to the directory containing the JSON files.
+
+    Returns:
+    - all_prompts (list): A list of tuples, where each tuple contains the following elements:
+                          1. The generated prompt (str).
+                          2. The correct answer (str) for the prompt.
+                          3. The number of the document (int).
+                          4. The number of options for each question (int).
+    """
     all_prompts = []
     file_paths = []
     for filename in os.listdir(directory):
@@ -93,6 +131,20 @@ def generate_all_prompts(directory):
 
 
 def generate_prompts_by_topic(directory):
+    """
+    Generate prompts for each topic represented by JSON files in a given directory.
+
+    Parameters:
+    - directory (str): The path to the directory containing the JSON files.
+
+    Returns:
+    - prompts_by_topic (list): A list of tuples, where each tuple contains the following elements:
+                               1. The generated prompt (str).
+                               2. The correct answer (str) for the prompt.
+                               3. The number of the document (int).
+                               4. The number of options for each question (int).
+    """
+
     prompts_by_topic = []
     file_paths = []
     for filename in os.listdir(directory):
@@ -133,6 +185,20 @@ def evaluate_prompts_llm(prompts, llm_evaluator, agent):
 
 
 async def evaluate_prompts_embeddings(prompts, agent):
+    """
+    Evaluate a list of prompts using semantic similarity embeddings.
+
+    Parameters:
+    - prompts (list): A list of tuples containing the prompts, correct answers, and other relevant information.
+                      Each tuple should contain the following elements:
+                      1. The generated prompt (str).
+                      2. The correct answer (str) for the prompt.
+                      3. Additional information if needed.
+    - agent: The query_engine or agent used for generating responses.
+
+    Returns:
+    - None
+    """
     evaluator_embeddings = SemanticSimilarityEvaluator()
     avg_score = 0
     right_results = 0
@@ -160,6 +226,21 @@ async def evaluate_prompts_embeddings(prompts, agent):
 
 
 async def evaluate_prompts_by_topic_options(prompts, agents):
+    """
+    Evaluate prompts by topic with different query engines options.
+
+    Parameters:
+    - prompts (list): A list of tuples containing the prompts, correct answers, and other relevant information.
+                      Each tuple should contain the following elements:
+                      1. The generated prompt (str).
+                      2. The correct answer (str) for the prompt.
+                      3. The index of the topic (int).
+                      4. The number of options for each question (int).
+    - agents (list): A list of query engines or agents for generating responses.
+
+    Returns:
+    - None
+    """
     overall_counter = 0
     overall_right_answers = 0
     options_dict = defaultdict(int)
@@ -212,6 +293,20 @@ async def evaluate_prompts_by_topic_options(prompts, agents):
 
 
 async def evaluate_chat_gpt_3_5_turbo(prompts, client):
+    """
+    Evaluate prompts using GPT-3.5-turbo model for chat completions.
+
+    Parameters:
+    - prompts (list): A list of tuples containing the prompts, correct answers, and other relevant information.
+                      Each tuple should contain the following elements:
+                      1. The generated prompt (str).
+                      2. The correct answer (str) for the prompt.
+                      3. Additional information if needed.
+    - client: The OpenAI client used for generating responses.
+
+    Returns:
+    - None
+    """
     evaluator_embeddings = SemanticSimilarityEvaluator()
     avg_score = 0
     right_results = 0
@@ -240,10 +335,25 @@ async def evaluate_chat_gpt_3_5_turbo(prompts, client):
     print("Right results ", right_results, "/", len(prompts))
 
 
-
-client = OpenAI()
 topic_prompts = generate_prompts_by_topic("data/prompts")
-asyncio.run(evaluate_prompts_by_topic_options(topic_prompts, [client, "chat_gpt"]))
+prompts = generate_all_prompts("data/prompts")
+sample_prompts = random.sample(prompts, 100)
+
+
+# example of usage of evaluation with LLM
+# llm_evaluator = OpenAI(model="gpt-3.5-turbo", temperature=0.0)
+# evaluate_prompts_llm(topic_prompts, llm_evaluator, query_engine)
+
+
+# example of usage of separated RAG evaluation (multiple query engines)
+asyncio.run(evaluate_prompts_by_topic_options(topic_prompts, list(doc_engines.values())))
+
+# example of usage of regular RAG evaluation (one query engine)
+asyncio.run(evaluate_prompts_by_topic_options(topic_prompts, [query_engine]))
+
+# example of usage of LLM evaluation (second element in the array can be anything)
+client = OpenAI()
+asyncio.run(evaluate_prompts_by_topic_options(topic_prompts, [client, "gpt-3.5-turbo"]))
 
 
 
