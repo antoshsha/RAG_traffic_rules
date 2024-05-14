@@ -14,4 +14,10 @@ This repository contains the code for all RAG system creation, prompt creation a
 - LLM (Language Model) judge evaluation: Evaluation of responses using a Language Model judge.
 - Examples of usage: Demonstrations of how to utilize the functions provided in this repository.
 
-### Note: you must have `.env` file in the main directory of the project with Open AI key and Cohere AI key.
+## Usage
+- clone this repository
+- create a `data` directory in the project directory
+- paste all the data from [this](https://github.com/antoshsha/traffic_rules_questions_ua/) repository in your `data` directory.
+- create `.env` file in your project directory with keys from Open AI and Cohere AI
+
+Good luck with exploring my project!
