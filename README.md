@@ -8,6 +8,7 @@ The dataset of prompts and a collection of Markdown documents used for this proj
 
 ## Project Structure
 This repository contains the code for all RAG system creation, prompt creation and testing. It includes:
+- RAG system creation in the `docs_loader.py` file
 - Prompt generation: Creation of prompts for evaluation and testing purposes.
 - Semantic similarity evaluation: Evaluation of generated responses using semantic similarity metrics.
 - LLM (Language Model) judge evaluation: Evaluation of responses using a Language Model judge.
