@@ -7,7 +7,7 @@ The objective of this work is to examine the power of RAG (Retrieval-Augmented G
 The dataset of prompts and a collection of Markdown documents used for this project can be found [here](https://github.com/antoshsha/traffic_rules_questions_ua/).
 
 ## Project Structure
-This repository contains the code for all prompt creation and testing. It includes:
+This repository contains the code for all RAG system creation, prompt creation and testing. It includes:
 - Prompt generation: Creation of prompts for evaluation and testing purposes.
 - Semantic similarity evaluation: Evaluation of generated responses using semantic similarity metrics.
 - LLM (Language Model) judge evaluation: Evaluation of responses using a Language Model judge.
